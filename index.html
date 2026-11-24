@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMO-RISK Score Calculator</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='d'%3E%3Cpath d='M50 6.9 L24.8 47.8 A30.2 30.2 0 1 0 75.2 47.8 Z'/%3E%3C/clipPath%3E%3Cmask id='m'%3E%3Crect width='100' height='100' fill='%23ffffff'/%3E%3Cpolyline points='8.6,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 90.9,37.7' fill='none' stroke='%23000000' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Cg clip-path='url(%23d)' mask='url(%23m)'%3E%3Crect x='0' y='0' width='50' height='100' fill='%23c179e5'/%3E%3Crect x='50' y='0' width='50' height='100' fill='%237b29b2'/%3E%3Cpolygon points='0,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 100,29 100,100 0,100' fill='%232d0a4b'/%3E%3C/g%3E%3Cpolyline points='8.6,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 90.9,37.7' fill='none' stroke='%239333ea' stroke-width='5.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --purple-950: #1e0b36;
+            --purple-900: #2e1065;
+            --purple-800: #4c1d95;
+            --purple-700: #5b21b6;
+            --purple-600: #6d28d9;
+            --purple-500: #7c3aed;
+            --purple-300: #c4b5fd;
+            --purple-200: #ddd6fe;
+            --purple-100: #ede9fe;
+            --purple-50: #f6f3ff;
+
+            --bg-page: #f5f3fa;
+            --bg-card: #ffffff;
+            --bg-subtle: #faf8fe;
+
+            --ink: #1a102b;
+            --ink-2: #433a59;
+            --ink-3: #6e6485;
+
+            --border: #e6e0f3;
+            --border-strong: #d0c5e8;
+
+            /* Stratifikasi Risiko Medis */
+            --low-bg: #ecfdf5;
+            --low-border: #a7f3d0;
+            --low-text: #065f46;
+            --low-accent: #10b981;
+
+            --med-bg: #fffbeb;
+            --med-border: #fde68a;
+            --med-text: #92400e;
+            --med-accent: #f59e0b;
+
+            --high-bg: #fef2f2;
+            --high-border: #fecaca;
+            --high-text: #991b1b;
+            --high-accent: #ef4444;
+
+            --sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+            --shadow-sm: 0 1px 2px rgba(30, 11, 54, 0.04);
+            --shadow-card: 0 1px 3px rgba(30, 11, 54, 0.04), 0 14px 34px -16px rgba(76, 29, 149, 0.14);
+            --shadow-hero: 0 20px 44px -18px rgba(46, 16, 101, 0.45);
+
+            --radius-xl: 20px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 9px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--sans);
+            background-color: var(--bg-page);
+            background-image:
+                radial-gradient(960px 460px at 90% -60px, rgba(124, 58, 237, 0.10), transparent 70%),
+                radial-gradient(720px 420px at 5% 180px, rgba(167, 139, 250, 0.10), transparent 70%);
+            color: var(--ink);
+            margin: 0;
+            padding: 24px 20px 64px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        /* ================= HERO HEADER ================= */
+        .brand-header {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--purple-950) 0%, var(--purple-800) 54%, var(--purple-600) 100%);
+            color: #ffffff;
+            border-radius: var(--radius-xl);
+            padding: 30px 34px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-hero);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .brand-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 85% 20%, rgba(221, 214, 254, 0.18), transparent 45%),
+                linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: auto, 32px 32px, 32px 32px;
+            pointer-events: none;
+        }
+
+        .hero-pulse-art {
+            position: absolute;
+            right: 140px;
+            bottom: -8px;
+            width: 340px;
+            height: 110px;
+            opacity: 0.10;
+            pointer-events: none;
+        }
+
+        .brand-left {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            max-width: 790px;
+        }
+
+        .brand-mark {
+            width: 62px;
+            height: 62px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .brand-logo-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(237, 233, 254, 0.24)) drop-shadow(0 6px 14px rgba(10, 2, 24, 0.45));
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--purple-100);
+            background: rgba(255, 255, 255, 0.11);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #6ee7b7;
+            box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.25);
+        }
+
+        .brand-title {
+            margin: 0 0 6px 0;
+            font-size: clamp(1.65rem, 3.1vw, 2.35rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.12;
+            color: #ffffff;
+        }
+
+        .brand-subtitle {
+            margin: 0;
+            font-size: clamp(0.88rem, 1.25vw, 0.98rem);
+            font-weight: 400;
+            color: rgba(237, 233, 254, 0.88);
+            line-height: 1.5;
+        }
+
+        .hero-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-reset {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-reset:active {
+            transform: translateY(0);
+        }
+
+        /* ================= WORKSPACE GRID ================= */
+        .main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.36fr) minmax(350px, 0.94fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 17px 24px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, #ffffff 0%, var(--bg-subtle) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: var(--purple-100);
+            color: var(--purple-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 0.98rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--ink);
+        }
+
+        .card-meta {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--purple-700);
+            background: var(--purple-50);
+            border: 1px solid var(--purple-200);
+            padding: 4px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .card-meta.warn {
+            color: var(--med-text);
+            background: var(--med-bg);
+            border-color: var(--med-border);
+        }
+
+        /* ================= FORM PARAMETERS ================= */
+        .param-group-bar {
+            padding: 10px 24px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--purple-700);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .param-group-bar::before {
+            content: "";
+            width: 14px;
+            height: 2px;
+            border-radius: 2px;
+            background: var(--purple-500);
+        }
+
+        .param-item {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            transition: background-color 0.18s ease;
+        }
+
+        .param-item:last-child {
+            border-bottom: none;
+        }
+
+        .param-item:focus-within {
+            background: #fcfbff;
+        }
+
+        .param-label {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .param-num {
+            font-family: var(--mono);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+            border-radius: 7px;
+            background: var(--purple-100);
+            color: var(--purple-800);
+            font-size: 0.72rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 9px;
+        }
+
+        .options-grid.etiology-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .option-wrap {
+            position: relative;
+        }
+
+        .option-wrap input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none;
+        }
+
+        .option-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #ffffff;
+            color: var(--ink-2);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+            height: 100%;
+            user-select: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .option-btn:hover {
+            border-color: var(--purple-300);
+            background: var(--purple-50);
+            color: var(--purple-900);
+            transform: translateY(-1px);
+        }
+
+        .radio-circle {
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 1.75px solid var(--border-strong);
+            background: #ffffff;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.16s ease;
+        }
+
+        .radio-circle::after {
+            content: "";
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid #ffffff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) scale(0);
+            transition: transform 0.16s ease;
+        }
+
+        .etio-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.3;
+        }
+
+        .etio-code {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--purple-700);
+            background: var(--purple-100);
+            padding: 2px 7px;
+            border-radius: 5px;
+            flex-shrink: 0;
+            transition: all 0.16s ease;
+        }
+
+        .option-wrap input[type="radio"]:checked + .option-btn {
+            background: var(--purple-50);
+            border-color: var(--purple-600);
+            color: var(--purple-900);
+            box-shadow: 0 0 0 1px var(--purple-600), 0 6px 14px -8px rgba(109, 40, 217, 0.42);
+        }
+
+        .option-wrap input[type="radio"]:checked + .option-btn .radio-circle {
+            border-color: var(--purple-600);
+            background: var(--purple-600);
+        }
+
+        .option-wrap input[type="radio"]:checked + .option-btn .radio-circle::after {
+            transform: rotate(45deg) scale(1);
+        }
+
+        .option-wrap input[type="radio"]:checked + .option-btn .etio-code {
+            background: var(--purple-600);
+            color: #ffffff;
+        }
+
+        .option-wrap input[type="radio"]:focus-visible + .option-btn {
+            outline: 2px solid var(--purple-600);
+            outline-offset: 2px;
+        }
+
+        /* Input Usia Mandiri */
+        .age-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .age-input-group {
+            display: inline-flex;
+            align-items: stretch;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 10px;
+            background: #ffffff;
+            overflow: hidden;
+            transition: border-color 0.16s ease, box-shadow 0.16s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .age-input-group:focus-within {
+            border-color: var(--purple-600);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.14);
+        }
+
+        .age-input-group input[type="number"] {
+            width: 96px;
+            border: none;
+            outline: none;
+            padding: 10px 14px;
+            font-family: var(--mono);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ink);
+            background: transparent;
+        }
+
+        .age-unit {
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            background: var(--bg-subtle);
+            border-left: 1px solid var(--border);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink-3);
+        }
+
+        .age-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 7px 13px;
+            border-radius: 999px;
+            background: var(--purple-100);
+            border: 1px solid var(--purple-200);
+            color: var(--purple-800);
+        }
+
+        .age-chip.empty {
+            background: var(--high-bg);
+            border-color: var(--high-border);
+            color: var(--high-text);
+        }
+
+        .age-brackets-hint {
+            margin: 10px 0 0;
+            font-size: 0.76rem;
+            color: var(--ink-3);
+        }
+
+        /* ================= STICKY RESULT SIDEBAR ================= */
+        .sidebar-sticky {
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-accent {
+            height: 5px;
+            background: var(--med-accent);
+            transition: background-color 0.25s ease;
+        }
+
+        .result-body {
+            padding: 20px 24px 24px;
+        }
+
+        /* SVG Gauge Instrument */
+        .gauge-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto 14px;
+        }
+
+        .gauge-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            overflow: visible;
+        }
+
+        .gauge-progress {
+            transition: stroke-dashoffset 0.45s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.25s ease;
+        }
+
+        .gauge-pointer {
+            transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .gauge-center {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .score-val-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .score-num {
+            font-size: 3.1rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+            transition: transform 0.16s ease;
+        }
+
+        .score-num.bump {
+            transform: scale(1.08);
+        }
+
+        .score-max {
+            font-family: var(--mono);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink-3);
+        }
+
+        .score-caption {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            margin-top: 4px;
+        }
+
+        .badge-center-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            border: 1.5px solid transparent;
+            transition: all 0.25s ease;
+        }
+
+        .risk-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .zone-pills {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .zone-pill {
+            text-align: center;
+            padding: 8px 6px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--ink-3);
+            opacity: 0.72;
+            transition: all 0.2s ease;
+        }
+
+        .zone-pill.active {
+            opacity: 1;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px -6px rgba(30, 11, 54, 0.25);
+        }
+
+        .zone-pill.low.active {
+            background: var(--low-bg);
+            border-color: var(--low-border);
+            color: var(--low-text);
+        }
+
+        .zone-pill.med.active {
+            background: var(--med-bg);
+            border-color: var(--med-border);
+            color: var(--med-text);
+        }
+
+        .zone-pill.high.active {
+            background: var(--high-bg);
+            border-color: var(--high-border);
+            color: var(--high-text);
+        }
+
+        .zone-title {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .zone-range {
+            display: block;
+            font-family: var(--mono);
+            font-size: 0.73rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .rec-box {
+            padding: 15px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            border-left-width: 4px;
+            background: var(--bg-subtle);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        .rec-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+        }
+
+        .rec-heading {
+            margin: 0;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink);
+        }
+
+        .rec-body {
+            margin: 0;
+            font-size: 0.86rem;
+            line-height: 1.62;
+            color: var(--ink-2);
+        }
+
+        /* Rekapitulasi Hasil Pengisian */
+        .recap-body {
+            padding: 10px 24px 16px;
+        }
+
+        .recap-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            padding: 8px 6px;
+            border-bottom: 1px solid #f1ecf9;
+            font-size: 0.82rem;
+            border-radius: 6px;
+            transition: background-color 0.15s ease;
+        }
+
+        .recap-row:hover {
+            background: var(--purple-50);
+        }
+
+        .recap-row:last-child {
+            border-bottom: none;
+        }
+
+        .recap-key {
+            color: var(--ink-3);
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .recap-val {
+            color: var(--ink);
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .recap-val.is-empty {
+            color: var(--high-text);
+        }
+
+        /* ================= BOTTOM SECTIONS ================= */
+        .bottom-section {
+            margin-top: 24px;
+        }
+
+        .section-body {
+            padding: 24px;
+        }
+
+        .three-col-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .sub-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+        }
+
+        .sub-card-head {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 12px;
+        }
+
+        .sub-step {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: var(--purple-700);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .sub-card h3 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .sub-card ul,
+        .sub-card ol {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 0.84rem;
+            color: var(--ink-2);
+            line-height: 1.65;
+        }
+
+        .sub-card li {
+            margin-bottom: 8px;
+        }
+
+        .sub-card li:last-child {
+            margin-bottom: 0;
+        }
+
+        .sub-card li::marker {
+            color: var(--purple-600);
+            font-weight: 700;
+        }
+
+        .tier-guide-list {
+            list-style: none !important;
+            padding-left: 0 !important;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tier-guide-item {
+            margin-bottom: 0 !important;
+            padding: 10px 12px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        .tier-tag {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 5px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .tier-tag.low { background: var(--low-bg); color: var(--low-text); border: 1px solid var(--low-border); }
+        .tier-tag.med { background: var(--med-bg); color: var(--med-text); border: 1px solid var(--med-border); }
+        .tier-tag.high { background: var(--high-bg); color: var(--high-text); border: 1px solid var(--high-border); }
+
+        .note-strip {
+            margin-top: 18px;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            background: var(--purple-50);
+            border: 1px solid var(--purple-200);
+            border-left: 4px solid var(--purple-600);
+            font-size: 0.84rem;
+            color: var(--ink-2);
+            line-height: 1.62;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .note-strip-icon {
+            color: var(--purple-700);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .note-strip strong {
+            color: var(--purple-900);
+        }
+
+        /* ================= MODUL EDUKASI BUKU SAKU ================= */
+        .edu-subtitle-banner {
+            margin: 0 0 18px 0;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--purple-800);
+            background: var(--purple-50);
+            border: 1px solid var(--purple-200);
+            padding: 11px 16px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-toggle-edu {
+            background: #ffffff;
+            color: var(--purple-800);
+            border: 1px solid var(--border-strong);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .btn-toggle-edu:hover {
+            background: var(--purple-700);
+            border-color: var(--purple-700);
+            color: #ffffff;
+        }
+
+        .edu-accordion-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .edu-item {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .edu-item[open] {
+            border-color: var(--purple-300);
+            box-shadow: 0 8px 22px -14px rgba(76, 29, 149, 0.28);
+        }
+
+        .edu-item summary {
+            padding: 15px 18px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--ink);
+            background: #ffffff;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background-color 0.16s ease;
+            user-select: none;
+        }
+
+        .edu-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .edu-item summary:hover {
+            background: var(--bg-subtle);
+        }
+
+        .edu-item[open] summary {
+            background: var(--purple-50);
+            border-bottom: 1px solid var(--border);
+            color: var(--purple-900);
+        }
+
+        .edu-num {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--purple-700);
+            background: var(--purple-100);
+            padding: 4px 8px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .edu-item[open] .edu-num {
+            background: var(--purple-700);
+            color: #ffffff;
+        }
+
+        .edu-chevron {
+            margin-left: auto;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            color: var(--purple-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.22s ease, background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .edu-item[open] .edu-chevron {
+            transform: rotate(180deg);
+            background: var(--purple-700);
+            border-color: var(--purple-700);
+            color: #ffffff;
+        }
+
+        .edu-content {
+            padding: 18px 20px 20px;
+            font-size: 0.87rem;
+            line-height: 1.68;
+            color: var(--ink-2);
+        }
+
+        .edu-item[open] .edu-content {
+            animation: eduOpen 0.22s ease;
+        }
+
+        @keyframes eduOpen {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .edu-content p {
+            margin: 0 0 12px 0;
+        }
+
+        .edu-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .edu-content ul,
+        .edu-content ol {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .edu-content li {
+            margin-bottom: 8px;
+        }
+
+        .edu-content li:last-child {
+            margin-bottom: 0;
+        }
+
+        .edu-content strong {
+            color: var(--ink);
+        }
+
+        /* 3 Fungsi Utama */
+        .func-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .func-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 15px 16px;
+        }
+
+        .func-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--purple-100);
+            color: var(--purple-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .func-box strong {
+            display: block;
+            color: var(--ink);
+            margin-bottom: 4px;
+            font-size: 0.88rem;
+        }
+
+        .func-box span {
+            font-size: 0.82rem;
+            color: var(--ink-2);
+        }
+
+        /* Diagram Alur Mesin HD */
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 14px;
+            max-width: 680px;
+        }
+
+        .flow-node {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--purple-600);
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        .flow-node.highlight {
+            background: var(--purple-50);
+            border-color: var(--purple-300);
+            border-left-color: var(--purple-700);
+        }
+
+        .flow-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--purple-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .flow-node.highlight .flow-icon {
+            background: var(--purple-700);
+            border-color: var(--purple-700);
+            color: #ffffff;
+        }
+
+        .flow-title {
+            font-weight: 800;
+            font-size: 0.8rem;
+            color: var(--purple-900);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .flow-desc {
+            font-size: 0.83rem;
+            color: var(--ink-2);
+            margin-top: 2px;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding-left: 20px;
+            font-size: 0.77rem;
+            font-weight: 600;
+            color: var(--purple-700);
+        }
+
+        /* Tabel Edukasi */
+        .edu-table-wrap {
+            overflow-x: auto;
+            margin-top: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+        }
+
+        .edu-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+            text-align: left;
+        }
+
+        .edu-table th {
+            background: var(--bg-subtle);
+            color: var(--ink);
+            font-weight: 700;
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .th-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edu-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            line-height: 1.55;
+            color: var(--ink-2);
+        }
+
+        .edu-table tbody tr:nth-child(even) td {
+            background: #fcfbfe;
+        }
+
+        .edu-table tbody tr:hover td {
+            background: var(--purple-50);
+        }
+
+        .edu-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .edu-table th.col-do {
+            background: var(--low-bg);
+            color: var(--low-text);
+        }
+
+        .edu-table th.col-dont {
+            background: var(--high-bg);
+            color: var(--high-text);
+        }
+
+        .btn-reset:focus-visible,
+        .btn-toggle-edu:focus-visible,
+        .edu-item summary:focus-visible {
+            outline: 2px solid var(--purple-600);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 960px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-sticky {
+                position: static;
+            }
+
+            .three-col-grid,
+            .func-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px 12px 44px;
+            }
+
+            .brand-header {
+                padding: 22px 18px;
+                border-radius: var(--radius-lg);
+            }
+
+            .brand-left {
+                gap: 12px;
+            }
+
+            .brand-mark {
+                width: 50px;
+                height: 50px;
+            }
+
+            .card-header,
+            .param-group-bar,
+            .param-item,
+            .result-body,
+            .recap-body,
+            .section-body {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .options-grid,
+            .options-grid.etiology-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Brand Header -->
+        <header class="brand-header">
+            <svg class="hero-pulse-art" viewBox="0 0 340 110" fill="none" aria-hidden="true">
+                <path d="M0 72 H72 L90 42 L110 92 L134 18 L156 84 L174 56 L192 72 H340" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+
+            <div class="brand-left">
+                <div class="brand-mark" aria-hidden="true">
+                    <svg class="brand-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <clipPath id="hemo-drop-clip">
+                                <path d="M 50 6.9 L 24.8 47.8 A 30.2 30.2 0 1 0 75.2 47.8 Z" />
+                            </clipPath>
+                            <mask id="hemo-drop-mask">
+                                <rect width="100" height="100" fill="#ffffff" />
+                                <polyline points="8.6,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 90.9,37.7" fill="none" stroke="#000000" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+                            </mask>
+                        </defs>
+                        <g clip-path="url(#hemo-drop-clip)" mask="url(#hemo-drop-mask)">
+                            <rect x="0" y="0" width="50" height="100" fill="#c179e5" />
+                            <rect x="50" y="0" width="50" height="100" fill="#7b29b2" />
+                            <polygon points="0,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 100,29 100,100 0,100" fill="#2d0a4b" />
+                        </g>
+                        <polyline points="8.6,64.6 31,64.6 37.7,44.4 48.3,76.3 57.3,54.5 64,65.1 90.9,37.7" fill="none" stroke="#8328c2" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-badge">
+                        <span class="live-dot"></span>
+                        Clinical Decision Support &middot; Real-Time
+                    </div>
+                    <h1 class="brand-title">HEMO-RISK Score Calculator</h1>
+                    <p class="brand-subtitle">Kalkulator Prognostik &amp; Stratifikasi Risiko Kardiovaskular Pasien Hemodialisis Berbasis Determinan Sosiodemografi</p>
+                </div>
+            </div>
+
+            <div class="hero-actions">
+                <button type="button" class="btn-reset" id="btn-reset" title="Kembalikan seluruh pilihan ke nilai awal">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                        <path d="M3 3v5h5" />
+                    </svg>
+                    Reset Default
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Calculator Workspace -->
+        <main class="main-grid">
+            <!-- Left: Form 8 Variabel -->
+            <section class="card" aria-label="Formulir Parameter Penilaian Pasien">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="card-icon" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                                <rect x="9" y="3" width="6" height="4" rx="1" />
+                                <path d="m9 14 2 2 4-4" />
+                            </svg>
+                        </span>
+                        <h2>Parameter Penilaian Pasien</h2>
+                    </div>
+                    <span class="card-meta" id="filled-badge">8/8 Terisi</span>
+                </div>
+
+                <div id="calculator-form">
+                    <div class="param-group-bar">Determinan Sosiodemografi</div>
+
+                    <!-- 1. Jenis Kelamin -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">01</span>Jenis Kelamin</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="jk" id="jk-1" value="1" data-label="Perempuan" checked>
+                                <label class="option-btn" for="jk-1">
+                                    <span class="radio-circle"></span>
+                                    <span>Perempuan</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="jk" id="jk-2" value="2" data-label="Laki-laki">
+                                <label class="option-btn" for="jk-2">
+                                    <span class="radio-circle"></span>
+                                    <span>Laki-laki</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Tingkat Pendidikan -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">02</span>Tingkat Pendidikan</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="pendidikan" id="pendidikan-1" value="1" data-label="S1 - S3">
+                                <label class="option-btn" for="pendidikan-1">
+                                    <span class="radio-circle"></span>
+                                    <span>S1 - S3</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="pendidikan" id="pendidikan-2" value="2" data-label="SMA" checked>
+                                <label class="option-btn" for="pendidikan-2">
+                                    <span class="radio-circle"></span>
+                                    <span>SMA</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="pendidikan" id="pendidikan-3" value="3" data-label="SD / SMP">
+                                <label class="option-btn" for="pendidikan-3">
+                                    <span class="radio-circle"></span>
+                                    <span>SD / SMP</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Status Pekerjaan -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">03</span>Status Pekerjaan</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="pekerjaan" id="pekerjaan-1" value="1" data-label="Bekerja" checked>
+                                <label class="option-btn" for="pekerjaan-1">
+                                    <span class="radio-circle"></span>
+                                    <span>Bekerja</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="pekerjaan" id="pekerjaan-2" value="2" data-label="Tidak Bekerja">
+                                <label class="option-btn" for="pekerjaan-2">
+                                    <span class="radio-circle"></span>
+                                    <span>Tidak Bekerja</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Usia Pasien -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">04</span>Usia Pasien</h3>
+                        <div class="age-row">
+                            <div class="age-input-group">
+                                <input type="number" id="usia-input" min="0" max="120" step="1" value="45" placeholder="0" aria-label="Usia Pasien dalam tahun">
+                                <span class="age-unit">Tahun</span>
+                            </div>
+                            <span class="age-chip" id="usia-category-chip">Kategori: Dewasa (18–59 th)</span>
+                        </div>
+                        <p class="age-brackets-hint">Klasifikasi otomatis: &lt; 18 th (Lainnya) &middot; 18–59 th (Dewasa) &middot; &ge; 60 th (Lansia)</p>
+                    </div>
+
+                    <div class="param-group-bar">Akses &amp; Terapi Hemodialisis</div>
+
+                    <!-- 5. Jarak Tempat Tinggal -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">05</span>Jarak Tempat Tinggal</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="jarak" id="jarak-1" value="1" data-label="≤ 15 km" checked>
+                                <label class="option-btn" for="jarak-1">
+                                    <span class="radio-circle"></span>
+                                    <span>&le; 15 km</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="jarak" id="jarak-2" value="2" data-label="> 15 km">
+                                <label class="option-btn" for="jarak-2">
+                                    <span class="radio-circle"></span>
+                                    <span>&gt; 15 km</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Frekuensi Hemodialisis -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">06</span>Frekuensi Hemodialisis</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="frekuensi" id="frekuensi-1" value="1" data-label="1x / minggu">
+                                <label class="option-btn" for="frekuensi-1">
+                                    <span class="radio-circle"></span>
+                                    <span>1x / minggu</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="frekuensi" id="frekuensi-2" value="2" data-label="2x / minggu" checked>
+                                <label class="option-btn" for="frekuensi-2">
+                                    <span class="radio-circle"></span>
+                                    <span>2x / minggu</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="frekuensi" id="frekuensi-3" value="3" data-label="3x / minggu">
+                                <label class="option-btn" for="frekuensi-3">
+                                    <span class="radio-circle"></span>
+                                    <span>3x / minggu</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-group-bar">Profil Klinis &amp; Etiologi</div>
+
+                    <!-- 7. Etiologi Penyakit Ginjal (E1 - E9) -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">07</span>Etiologi Penyakit Ginjal</h3>
+                        <div class="options-grid etiology-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e1" value="2" data-label="E1 - Primary Glomerulopathy">
+                                <label class="option-btn" for="etiologi-e1">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E1</span><span>Primary Glomerulopathy</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e2" value="3" data-label="E2 - Diabetic Nephropathy">
+                                <label class="option-btn" for="etiologi-e2">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E2</span><span>Diabetic Nephropathy</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e3" value="3" data-label="E3 - Lupus Nephritis">
+                                <label class="option-btn" for="etiologi-e3">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E3</span><span>Lupus Nephritis</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e4" value="3" data-label="E4 - Hypertensive Kidney Disease" checked>
+                                <label class="option-btn" for="etiologi-e4">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E4</span><span>Hypertensive Kidney Disease</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e5" value="2" data-label="E5 - Polycystic Kidney Disease">
+                                <label class="option-btn" for="etiologi-e5">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E5</span><span>Polycystic Kidney Disease</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e6" value="2" data-label="E6 - Uric Acid Nephropathy">
+                                <label class="option-btn" for="etiologi-e6">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E6</span><span>Uric Acid Nephropathy</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e7" value="2" data-label="E7 - Obstructive Nephropathy">
+                                <label class="option-btn" for="etiologi-e7">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E7</span><span>Obstructive Nephropathy</span></span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="etiologi" id="etiologi-e9" value="2" data-label="E9 - Others">
+                                <label class="option-btn" for="etiologi-e9">
+                                    <span class="radio-circle"></span>
+                                    <span class="etio-text"><span class="etio-code">E9</span><span>Others</span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 8. Status Komorbid Kardiovaskular -->
+                    <div class="param-item">
+                        <h3 class="param-label"><span class="param-num">08</span>Status Komorbid Kardiovaskular</h3>
+                        <div class="options-grid">
+                            <div class="option-wrap">
+                                <input type="radio" name="komorbid" id="komorbid-0" value="0" data-label="Tidak Ada">
+                                <label class="option-btn" for="komorbid-0">
+                                    <span class="radio-circle"></span>
+                                    <span>Tidak Ada</span>
+                                </label>
+                            </div>
+                            <div class="option-wrap">
+                                <input type="radio" name="komorbid" id="komorbid-2" value="2" data-label="Ada" checked>
+                                <label class="option-btn" for="komorbid-2">
+                                    <span class="radio-circle"></span>
+                                    <span>Ada</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Sticky Result & Recap -->
+            <aside class="sidebar-sticky" aria-live="polite">
+                <div class="card">
+                    <div class="result-accent" id="result-accent"></div>
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                                </svg>
+                            </span>
+                            <h2>Hasil Stratifikasi Risiko</h2>
+                        </div>
+                        <span class="card-meta">0 – 20</span>
+                    </div>
+
+                    <div class="result-body">
+                        <!-- SVG Clinical Risk Gauge -->
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 280 162" aria-hidden="true">
+                                <!-- Outer risk zone track -->
+                                <path d="M 26 140 A 114 114 0 0 1 145.37 26.13" fill="none" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round" />
+                                <path d="M 152.51 26.69 A 114 114 0 0 1 224.32 63.28" fill="none" stroke="#fde68a" stroke-width="4" stroke-linecap="round" />
+                                <path d="M 228.97 68.72 A 114 114 0 0 1 254 140" fill="none" stroke="#fecaca" stroke-width="4" stroke-linecap="round" />
+
+                                <!-- Main track -->
+                                <path d="M 40 140 A 100 100 0 0 1 240 140" fill="none" stroke="#ede9fe" stroke-width="14" stroke-linecap="round" />
+
+                                <!-- Dynamic active progress -->
+                                <path id="gauge-progress" class="gauge-progress" d="M 40 140 A 100 100 0 0 1 240 140" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="94.25" />
+
+                                <!-- Pointer marker -->
+                                <g id="gauge-pointer" class="gauge-pointer" transform="translate(198.78, 59.10)">
+                                    <circle r="9" fill="#ffffff" stroke="#f59e0b" stroke-width="3.5" id="gauge-pointer-ring" />
+                                </g>
+
+                                <!-- Scale labels -->
+                                <text x="20" y="157" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#6e6485">0</text>
+                                <text x="160" y="15" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#6e6485">11</text>
+                                <text x="245" y="66" text-anchor="start" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#6e6485">16</text>
+                                <text x="260" y="157" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#6e6485">20</text>
+                            </svg>
+
+                            <div class="gauge-center">
+                                <div class="score-val-wrap">
+                                    <span class="score-num" id="final-score">14</span>
+                                    <span class="score-max">/ 20</span>
+                                </div>
+                                <span class="score-caption">Skor Risiko Total</span>
+                            </div>
+                        </div>
+
+                        <div class="badge-center-row">
+                            <div class="risk-badge" id="risk-badge">
+                                <span class="risk-dot"></span>
+                                <span id="risk-badge-text">RISIKO SEDANG</span>
+                            </div>
+                        </div>
+
+                        <div class="zone-pills">
+                            <div class="zone-pill low" id="zone-low">
+                                <span class="zone-title">Rendah</span>
+                                <span class="zone-range">&lt; 11</span>
+                            </div>
+                            <div class="zone-pill med" id="zone-med">
+                                <span class="zone-title">Sedang</span>
+                                <span class="zone-range">11 – 15</span>
+                            </div>
+                            <div class="zone-pill high" id="zone-high">
+                                <span class="zone-title">Tinggi</span>
+                                <span class="zone-range">16 – 20</span>
+                            </div>
+                        </div>
+
+                        <div class="rec-box" id="rec-box">
+                            <div class="rec-header">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    <path d="M12 8v4" />
+                                    <path d="M12 16h.01" />
+                                </svg>
+                                <h3 class="rec-heading">Rekomendasi Intervensi Klinis</h3>
+                            </div>
+                            <p class="rec-body" id="recommendation-text">
+                                Pasien berada pada risiko sedang. Perlu evaluasi berkala frekuensi hemodialisis, kontrol ketat komorbiditas, dan manajemen cairan.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rekapitulasi Hasil Pengisian -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="8" y1="6" x2="21" y2="6" />
+                                    <line x1="8" y1="12" x2="21" y2="12" />
+                                    <line x1="8" y1="18" x2="21" y2="18" />
+                                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                                </svg>
+                            </span>
+                            <h2>Rekapitulasi Hasil Pengisian</h2>
+                        </div>
+                    </div>
+                    <div class="recap-body" id="recap-list"></div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Petunjuk & Keterangan Pengisian -->
+        <section class="card bottom-section" aria-label="Petunjuk dan Keterangan Pengisian">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <span class="card-icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4" />
+                            <path d="M12 8h.01" />
+                        </svg>
+                    </span>
+                    <h2>Petunjuk &amp; Keterangan Pengisian</h2>
+                </div>
+                <span class="card-meta">Panduan</span>
+            </div>
+            <div class="section-body">
+                <div class="three-col-grid">
+                    <div class="sub-card">
+                        <div class="sub-card-head">
+                            <span class="sub-step">01</span>
+                            <h3>Tata Cara Pengisian</h3>
+                        </div>
+                        <ol>
+                            <li>Pilih opsi yang sesuai dengan kondisi pasien pada setiap parameter.</li>
+                            <li>Pada kolom <strong>Usia Pasien</strong>, ketikkan usia secara mandiri dalam satuan <strong>tahun</strong>; sistem mengelompokkan kategori secara otomatis.</li>
+                            <li>Hasil stratifikasi risiko, rekomendasi klinis, dan rekapitulasi diperbarui secara <em>real-time</em>.</li>
+                            <li>Gunakan tombol <strong>Reset Default</strong> di bagian atas untuk mengulang pengisian.</li>
+                        </ol>
+                    </div>
+
+                    <div class="sub-card">
+                        <div class="sub-card-head">
+                            <span class="sub-step">02</span>
+                            <h3>Keterangan Parameter</h3>
+                        </div>
+                        <ul>
+                            <li><strong>Usia Pasien:</strong> Dikelompokkan otomatis menjadi Lainnya (&lt; 18 th), Dewasa (18–59 th), dan Lansia (&ge; 60 th).</li>
+                            <li><strong>Jarak Tempat Tinggal:</strong> Jarak tempuh dari tempat tinggal pasien ke fasilitas layanan hemodialisis.</li>
+                            <li><strong>Etiologi Penyakit Ginjal:</strong> Diagnosis dasar penyakit ginjal sesuai klasifikasi kode E1 hingga E9.</li>
+                            <li><strong>Status Komorbid Kardiovaskular:</strong> Riwayat atau keberadaan penyakit penyerta jantung dan pembuluh darah.</li>
+                        </ul>
+                    </div>
+
+                    <div class="sub-card">
+                        <div class="sub-card-head">
+                            <span class="sub-step">03</span>
+                            <h3>Interpretasi Stratifikasi Risiko</h3>
+                        </div>
+                        <ul class="tier-guide-list">
+                            <li class="tier-guide-item">
+                                <span class="tier-tag low">&lt; 11</span><strong>Risiko Rendah:</strong> Lanjutkan pemantauan rutin dan pertahankan tingkat kepatuhan terapi.
+                            </li>
+                            <li class="tier-guide-item">
+                                <span class="tier-tag med">11 – 15</span><strong>Risiko Sedang:</strong> Perlu evaluasi berkala frekuensi hemodialisis, kontrol ketat komorbiditas, dan manajemen cairan.
+                            </li>
+                            <li class="tier-guide-item">
+                                <span class="tier-tag high">16 – 20</span><strong>Risiko Tinggi:</strong> Memerlukan evaluasi klinis segera, penyesuaian intensitas hemodialisis, dan tata laksana agresif terhadap faktor penyulit.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-strip">
+                    <span class="note-strip-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>Catatan Klinis:</strong> HEMO-RISK Score Calculator merupakan alat bantu skrining dan stratifikasi risiko prognostik berbasis determinan sosiodemografi &amp; klinis. Keputusan tata laksana akhir tetap disesuaikan dengan penilaian klinis komprehensif oleh tenaga medis.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modul Edukasi Buku Saku -->
+        <section class="card bottom-section" aria-label="Modul Edukasi Buku Saku Pasien Hemodialisis">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <span class="card-icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg>
+                    </span>
+                    <h2>Modul Edukasi Buku Saku: Panduan Pasien Hemodialisis</h2>
+                </div>
+                <button type="button" class="btn-toggle-edu" id="btn-toggle-edu">Buka Semua</button>
+            </div>
+            <div class="section-body">
+                <div class="edu-subtitle-banner">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    <span>Disusun untuk Optimalisasi Kualitas Hidup Pasien Penyakit Ginjal Kronik (PGK)</span>
+                </div>
+
+                <div class="edu-accordion-list" id="edu-accordion-list">
+                    <!-- 1. Memahami Hemodialisis -->
+                    <details class="edu-item" open>
+                        <summary>
+                            <span class="edu-num">01</span>
+                            <span>Memahami Hemodialisis (Cuci Darah)</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Hemodialisis (HD) adalah terapi pengganti fungsi ginjal. Ketika ginjal asli telah kehilangan lebih dari 85% fungsinya (PGK Stadium 5), tubuh tidak lagi mampu membuang racun dan kelebihan air melalui urine.</p>
+                            <p><strong>3 Fungsi Utama Hemodialisis:</strong></p>
+                            <div class="func-grid">
+                                <div class="func-box">
+                                    <span class="func-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+                                        </svg>
+                                    </span>
+                                    <strong>1. Membersihkan Darah</strong>
+                                    <span>Membuang racun metabolisme (Ureum &amp; Kreatinin).</span>
+                                </div>
+                                <div class="func-box">
+                                    <span class="func-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+                                            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+                                            <path d="M7 21h10" />
+                                            <path d="M12 3v18" />
+                                            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+                                        </svg>
+                                    </span>
+                                    <strong>2. Menyeimbangkan Cairan</strong>
+                                    <span>Menarik kelebihan air di dalam tubuh (<em>Ultrafiltrasi</em>).</span>
+                                </div>
+                                <div class="func-box">
+                                    <span class="func-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 2v7.31" />
+                                            <path d="M14 9.3V1.99" />
+                                            <path d="M8.5 2h7" />
+                                            <path d="M14 9.3a6.5 6.5 0 1 1-4 0" />
+                                            <path d="M5.52 16h12.96" />
+                                        </svg>
+                                    </span>
+                                    <strong>3. Regulasi Elektrolit</strong>
+                                    <span>Menstabilkan kadar Kalium, Natrium, dan Kalsium darah.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- 2. Diagram Alur -->
+                    <details class="edu-item">
+                        <summary>
+                            <span class="edu-num">02</span>
+                            <span>Diagram Alur: Bagaimana Mesin Bekerja?</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Proses cuci darah umumnya memakan waktu <strong>4 hingga 5 jam</strong> per sesi. Berikut adalah visualisasi alur perputaran darah Anda selama mesin menyala:</p>
+                            <div class="flow-steps">
+                                <div class="flow-node">
+                                    <span class="flow-icon" aria-hidden="true">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>
+                                    </span>
+                                    <div>
+                                        <div class="flow-title">Tubuh Pasien</div>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                                    <span>Darah kotor ditarik keluar</span>
+                                </div>
+                                <div class="flow-node">
+                                    <span class="flow-icon" aria-hidden="true">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12h16"/><path d="M12 4v16"/></svg>
+                                    </span>
+                                    <div>
+                                        <div class="flow-title">Akses Vaskular</div>
+                                        <div class="flow-desc">AV Fistula (Cimino) di lengan atau Kateter (CDL) di dada/leher.</div>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                                    <span>Didorong oleh Pompa Darah</span>
+                                </div>
+                                <div class="flow-node highlight">
+                                    <span class="flow-icon" aria-hidden="true">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 8h4"/><path d="M10 12h4"/><path d="M10 16h4"/></svg>
+                                    </span>
+                                    <div>
+                                        <div class="flow-title">Dialiser &mdash; Ginjal Buatan (Filter Utama)</div>
+                                        <div class="flow-desc">
+                                            Di sini terjadi 2 proses:<br>
+                                            1. <strong>Difusi</strong> (Zat racun berpindah ke cairan pembuang/dialisat)<br>
+                                            2. <strong>Ultrafiltrasi</strong> (Kelebihan air ditarik dari darah)
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                                    <span>Melewati pengaman udara</span>
+                                </div>
+                                <div class="flow-node">
+                                    <span class="flow-icon" aria-hidden="true">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    </span>
+                                    <div>
+                                        <div class="flow-title">Bubble Trap</div>
+                                        <div class="flow-desc">Penangkap gelembung udara agar darah aman.</div>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                                    <span>Darah bersih siap</span>
+                                </div>
+                                <div class="flow-node">
+                                    <span class="flow-icon" aria-hidden="true">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    </span>
+                                    <div>
+                                        <div class="flow-title">Kembali ke Tubuh Pasien</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- 3. Matriks Nutrisi -->
+                    <details class="edu-item">
+                        <summary>
+                            <span class="edu-num">03</span>
+                            <span>Matriks Nutrisi Pejuang Cuci Darah</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Diet pasien HD <strong>sangat berbeda</strong> dengan diet orang sehat atau pasien penyakit lain. Pasien HD butuh tinggi protein, namun harus sangat ketat membatasi cairan dan mineral tertentu.</p>
+                            <div class="edu-table-wrap">
+                                <table class="edu-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Kategori Diet</th>
+                                            <th class="col-do">
+                                                <span class="th-inline">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    Dianjurkan (Boleh Dikonsumsi)
+                                                </span>
+                                            </th>
+                                            <th class="col-dont">
+                                                <span class="th-inline">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                                    Dibatasi / Dihindari (Bahaya)
+                                                </span>
+                                            </th>
+                                            <th>Alasan Medis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Protein</strong></td>
+                                            <td>Putih telur rebus, ikan segar, ayam tanpa kulit, daging sapi tanpa lemak.</td>
+                                            <td>Daging olahan (sosis, kornet), kuning telur (batasi).</td>
+                                            <td>Asam amino hilang selama HD. Butuh protein tinggi untuk cegah malnutrisi.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Kalium</strong></td>
+                                            <td>Apel, pir, pepaya, semangka (dalam jumlah kecil).</td>
+                                            <td><strong>Pisang, alpukat, tomat, bayam</strong>, air kelapa.</td>
+                                            <td>Kalium tinggi (<em>Hiperkalemia</em>) memicu henti jantung mendadak (aritmia).</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Fosfat</strong></td>
+                                            <td>Sayuran bening, teh encer.</td>
+                                            <td><strong>Susu, keju, yogurt, kacang-kacangan</strong>, minuman bersoda, kopi.</td>
+                                            <td>Fosfat tinggi memicu tulang keropos dan kulit sangat gatal.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Natrium/Garam</strong></td>
+                                            <td>Bumbu alami (bawang, kunyit, ketumbar).</td>
+                                            <td>Makanan kaleng, mi instan, ikan asin, kecap asin, MSG.</td>
+                                            <td>Garam memicu rasa haus berlebih dan menaikkan tekanan darah.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- 4. Perawatan Akses Cimino -->
+                    <details class="edu-item">
+                        <summary>
+                            <span class="edu-num">04</span>
+                            <span>Perawatan Akses Cimino (AV Fistula)</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Cimino adalah &ldquo;Jalan Kehidupan&rdquo; pasien HD. Pembuluh darah vena dan arteri disambung lewat operasi kecil agar aliran darah cukup deras untuk ditarik mesin.</p>
+                            <p><strong>Aturan &ldquo;DOs &amp; DON&apos;Ts&rdquo; Lengan Cimino:</strong></p>
+                            <div class="edu-table-wrap">
+                                <table class="edu-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-do">
+                                                <span class="th-inline">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    LAKUKAN (DO)
+                                                </span>
+                                            </th>
+                                            <th class="col-dont">
+                                                <span class="th-inline">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                                    DILARANG KERAS (DON&apos;T)
+                                                </span>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Raba getaran (bising/<em>thrill</em>) di area Cimino setiap hari untuk memastikan aliran lancar.</td>
+                                            <td><strong>DILARANG</strong> menggunakan lengan Cimino untuk mengukur tensi darah.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cuci lengan Cimino dengan sabun dan air hangat sebelum ditusuk di ruang HD.</td>
+                                            <td><strong>DILARANG</strong> mengambil darah di lengan Cimino selain untuk proses HD.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kompres es (dingin) jika ada bengkak di 24 jam pertama pasca-HD.</td>
+                                            <td><strong>DILARANG</strong> mengangkat beban berat (&gt; 2 kg) menggunakan lengan Cimino.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Latih Cimino dengan memeras bola karet ringan.</td>
+                                            <td><strong>DILARANG</strong> memakai jam tangan ketat, gelang, atau tidur menindih lengan Cimino.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- 5. Waspada Komplikasi Intradialitik -->
+                    <details class="edu-item">
+                        <summary>
+                            <span class="edu-num">05</span>
+                            <span>Waspada Komplikasi Saat Mesin Berjalan (Intradialitik)</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Selama 4–5 jam mesin menyala, tubuh mengalami perubahan drastis. Segera angkat tangan dan panggil perawat jika Anda merasakan:</p>
+                            <ol>
+                                <li><strong>Hipotensi (Tekanan Darah Drop):</strong> Terasa pusing mendadak, mata berkunang-kunang, menguap terus-menerus, atau mual. <em>Sebab: Mesin menarik cairan terlalu cepat/banyak.</em></li>
+                                <li><strong>Kram Otot (Biasanya di betis):</strong> <em>Sebab: Penarikan cairan berlebih atau perubahan elektrolit mendadak.</em></li>
+                                <li><strong>Gatal-gatal hebat:</strong> <em>Sebab: Reaksi alergi ringan terhadap membran dialiser atau penumpukan fosfat akut.</em></li>
+                            </ol>
+                        </div>
+                    </details>
+
+                    <!-- 6. Faktor Risiko Penentu Keberhasilan Terapi -->
+                    <details class="edu-item">
+                        <summary>
+                            <span class="edu-num">06</span>
+                            <span>Faktor Risiko Penentu Keberhasilan Terapi (Korelasi Kalkulator)</span>
+                            <span class="edu-chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </span>
+                        </summary>
+                        <div class="edu-content">
+                            <p>Berdasarkan parameter medis, pasien dengan kondisi berikut memerlukan pengawasan yang jauh lebih ekstra:</p>
+                            <ul>
+                                <li><strong>Usia Lansia (&ge; 60 tahun) &amp; Komorbid Jantung:</strong> Pembuluh darah lebih kaku (akibat hipertensi kronis), membuat jantung lebih cepat lelah saat mesin menarik cairan.</li>
+                                <li><strong>Jarak Tempuh &gt; 15 KM:</strong> Perjalanan jauh pasca-HD akan memperparah kelelahan (<em>Fatigue</em>). Pasien butuh pendampingan keluarga yang kuat.</li>
+                                <li><strong>Frekuensi &lt; 2x Seminggu:</strong> Penumpukan racun (<em>Uremia</em>) akan merusak saraf tepi dan fungsi otak jika cuci darah hanya dilakukan 1 kali seminggu.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="note-strip">
+                    <span class="note-strip-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>PESAN UNTUK PASIEN &amp; KELUARGA:</strong><br>
+                        Hemodialisis bukan akhir dari segalanya, melainkan cara agar Anda tetap bisa beraktivitas. Kunci utama umur panjang dan kualitas hidup yang baik pada pasien HD adalah: <strong>Disiplin Minum, Disiplin Diet (Batasi Kalium), dan Disiplin Jadwal Cuci Darah.</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let lastScore = null;
+        const GAUGE_ARC_LEN = Math.PI * 100; // ~314.16
+
+        function getRadioSelection(name) {
+            const checked = document.querySelector(`input[name="${name}"]:checked`);
+            if (!checked) return { val: 0, label: '-', filled: false };
+            return {
+                val: parseInt(checked.value, 10) || 0,
+                label: checked.dataset.label || '',
+                filled: true
+            };
+        }
+
+        function getAgeAssessment() {
+            const input = document.getElementById('usia-input');
+            const chip = document.getElementById('usia-category-chip');
+            const raw = input.value.trim();
+
+            if (raw === '' || isNaN(Number(raw)) || Number(raw) < 0) {
+                chip.textContent = 'Kategori: Belum diisi';
+                chip.classList.add('empty');
+                return { val: 0, label: 'Belum diisi', filled: false };
+            }
+
+            const age = Math.floor(Number(raw));
+            chip.classList.remove('empty');
+
+            if (age < 18) {
+                chip.textContent = 'Kategori: Lainnya (< 18 th)';
+                return { val: 1, label: `${age} tahun (Lainnya)`, filled: true };
+            } else if (age <= 59) {
+                chip.textContent = 'Kategori: Dewasa (18–59 th)';
+                return { val: 2, label: `${age} tahun (Dewasa)`, filled: true };
+            } else {
+                chip.textContent = 'Kategori: Lansia (≥ 60 th)';
+                return { val: 3, label: `${age} tahun (Lansia)`, filled: true };
+            }
+        }
+
+        function updateGauge(total, accentColor) {
+            const ratio = Math.min(Math.max(total / 20, 0), 1);
+            const progress = document.getElementById('gauge-progress');
+            const pointer = document.getElementById('gauge-pointer');
+            const pointerRing = document.getElementById('gauge-pointer-ring');
+
+            progress.style.strokeDashoffset = (GAUGE_ARC_LEN * (1 - ratio)).toFixed(2);
+            progress.style.stroke = accentColor;
+
+            const theta = Math.PI * (1 - ratio);
+            const px = (140 + 100 * Math.cos(theta)).toFixed(2);
+            const py = (140 - 100 * Math.sin(theta)).toFixed(2);
+            pointer.setAttribute('transform', `translate(${px}, ${py})`);
+            pointerRing.setAttribute('stroke', accentColor);
+        }
+
+        function calculate() {
+            const jk = getRadioSelection('jk');
+            const pendidikan = getRadioSelection('pendidikan');
+            const pekerjaan = getRadioSelection('pekerjaan');
+            const usia = getAgeAssessment();
+            const jarak = getRadioSelection('jarak');
+            const frekuensi = getRadioSelection('frekuensi');
+            const etiologi = getRadioSelection('etiologi');
+            const komorbid = getRadioSelection('komorbid');
+
+            const items = [
+                { name: 'Jenis Kelamin', value: jk.label, score: jk.val, filled: jk.filled },
+                { name: 'Tingkat Pendidikan', value: pendidikan.label, score: pendidikan.val, filled: pendidikan.filled },
+                { name: 'Status Pekerjaan', value: pekerjaan.label, score: pekerjaan.val, filled: pekerjaan.filled },
+                { name: 'Usia Pasien', value: usia.label, score: usia.val, filled: usia.filled },
+                { name: 'Jarak Tempat Tinggal', value: jarak.label, score: jarak.val, filled: jarak.filled },
+                { name: 'Frekuensi Hemodialisis', value: frekuensi.label, score: frekuensi.val, filled: frekuensi.filled },
+                { name: 'Etiologi Penyakit Ginjal', value: etiologi.label, score: etiologi.val, filled: etiologi.filled },
+                { name: 'Status Komorbid Kardiovaskular', value: komorbid.label, score: komorbid.val, filled: komorbid.filled }
+            ];
+
+            const filledCount = items.filter(i => i.filled).length;
+            const filledBadge = document.getElementById('filled-badge');
+            filledBadge.textContent = `${filledCount}/8 Terisi`;
+            filledBadge.classList.toggle('warn', filledCount < 8);
+
+            const total = items.reduce((sum, item) => sum + item.score, 0);
+
+            const scoreEl = document.getElementById('final-score');
+            scoreEl.textContent = total;
+            if (lastScore !== null && lastScore !== total) {
+                scoreEl.classList.remove('bump');
+                void scoreEl.offsetWidth;
+                scoreEl.classList.add('bump');
+                setTimeout(() => scoreEl.classList.remove('bump'), 160);
+            }
+            lastScore = total;
+
+            const accent = document.getElementById('result-accent');
+            const badge = document.getElementById('risk-badge');
+            const badgeText = document.getElementById('risk-badge-text');
+            const recBox = document.getElementById('rec-box');
+            const recText = document.getElementById('recommendation-text');
+
+            const zoneLow = document.getElementById('zone-low');
+            const zoneMed = document.getElementById('zone-med');
+            const zoneHigh = document.getElementById('zone-high');
+            zoneLow.classList.remove('active');
+            zoneMed.classList.remove('active');
+            zoneHigh.classList.remove('active');
+
+            if (total < 11) {
+                updateGauge(total, '#10b981');
+                accent.style.backgroundColor = 'var(--low-accent)';
+                badgeText.textContent = 'RISIKO RENDAH';
+                badge.style.backgroundColor = 'var(--low-bg)';
+                badge.style.color = 'var(--low-text)';
+                badge.style.borderColor = 'var(--low-border)';
+                recBox.style.backgroundColor = 'var(--low-bg)';
+                recBox.style.borderColor = 'var(--low-border)';
+                recBox.style.borderLeftColor = 'var(--low-accent)';
+                zoneLow.classList.add('active');
+                recText.textContent = 'Pasien berada pada risiko rendah. Lanjutkan pemantauan rutin dan pertahankan tingkat kepatuhan terapi saat ini.';
+            } else if (total >= 11 && total <= 15) {
+                updateGauge(total, '#f59e0b');
+                accent.style.backgroundColor = 'var(--med-accent)';
+                badgeText.textContent = 'RISIKO SEDANG';
+                badge.style.backgroundColor = 'var(--med-bg)';
+                badge.style.color = 'var(--med-text)';
+                badge.style.borderColor = 'var(--med-border)';
+                recBox.style.backgroundColor = 'var(--med-bg)';
+                recBox.style.borderColor = 'var(--med-border)';
+                recBox.style.borderLeftColor = 'var(--med-accent)';
+                zoneMed.classList.add('active');
+                recText.textContent = 'Pasien berada pada risiko sedang. Perlu evaluasi berkala frekuensi hemodialisis, kontrol ketat komorbiditas, dan manajemen cairan.';
+            } else {
+                updateGauge(total, '#ef4444');
+                accent.style.backgroundColor = 'var(--high-accent)';
+                badgeText.textContent = 'RISIKO TINGGI';
+                badge.style.backgroundColor = 'var(--high-bg)';
+                badge.style.color = 'var(--high-text)';
+                badge.style.borderColor = 'var(--high-border)';
+                recBox.style.backgroundColor = 'var(--high-bg)';
+                recBox.style.borderColor = 'var(--high-border)';
+                recBox.style.borderLeftColor = 'var(--high-accent)';
+                zoneHigh.classList.add('active');
+                recText.textContent = 'Pasien berada pada risiko tinggi. Diperlukan evaluasi klinis segera, penyesuaian intensitas hemodialisis, dan tata laksana agresif terhadap faktor penyulit.';
+            }
+
+            const recapList = document.getElementById('recap-list');
+            recapList.innerHTML = items.map(item => `
+                <div class="recap-row">
+                    <span class="recap-key">${item.name}</span>
+                    <span class="recap-val${item.filled ? '' : ' is-empty'}">${item.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function resetToDefault() {
+            document.getElementById('jk-1').checked = true;
+            document.getElementById('pendidikan-2').checked = true;
+            document.getElementById('pekerjaan-1').checked = true;
+            document.getElementById('usia-input').value = '45';
+            document.getElementById('jarak-1').checked = true;
+            document.getElementById('frekuensi-2').checked = true;
+            document.getElementById('etiologi-e4').checked = true;
+            document.getElementById('komorbid-2').checked = true;
+            calculate();
+        }
+
+        document.getElementById('calculator-form').addEventListener('change', calculate);
+        document.getElementById('usia-input').addEventListener('input', calculate);
+        document.getElementById('btn-reset').addEventListener('click', resetToDefault);
+
+        const toggleEduBtn = document.getElementById('btn-toggle-edu');
+        const eduDetails = document.querySelectorAll('#edu-accordion-list .edu-item');
+        toggleEduBtn.addEventListener('click', () => {
+            const allOpen = Array.from(eduDetails).every(d => d.open);
+            eduDetails.forEach(d => { d.open = !allOpen; });
+            toggleEduBtn.textContent = allOpen ? 'Buka Semua' : 'Tutup Semua';
+        });
+
+        window.addEventListener('DOMContentLoaded', calculate);
+    </script>
+
+</body>
+
+</html>
